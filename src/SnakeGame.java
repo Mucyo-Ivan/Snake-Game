@@ -6,7 +6,6 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.LinkedList;
 
-
 public class SnakeGame extends JPanel implements ActionListener {
     private static final int WIDTH = 800;
     private static final int HEIGHT = 600;
@@ -18,6 +17,8 @@ public class SnakeGame extends JPanel implements ActionListener {
     private boolean gameOver = false;
     private boolean paused = false;
     private Timer timer;
+    private int score = 0;
+    private int delay = 150; // Initial delay (speed of the game)
 
     public SnakeGame() {
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
@@ -26,6 +27,9 @@ public class SnakeGame extends JPanel implements ActionListener {
         addKeyListener(new KeyAdapter() {
             public void keyPressed(KeyEvent e) {
                 if (gameOver) {
+                    if (e.getKeyCode() == KeyEvent.VK_ENTER) { // Restart on Enter key
+                        resetGame();
+                    }
                     return;
                 }
                 switch (e.getKeyCode()) {
@@ -55,9 +59,17 @@ public class SnakeGame extends JPanel implements ActionListener {
         snake.clear();
         snake.add(new Point(5, 5)); // Initial position of the snake
         spawnFood();
-
-        timer = new Timer(100, this); // Refresh every 100 ms
+        score = 0; // Reset score
+        direction = 'R'; // Reset direction
+        delay = 150; // Reset speed
+        if (timer != null) timer.stop();
+        timer = new Timer(delay, this); // Create a new timer with the initial delay
         timer.start();
+    }
+
+    public void resetGame() {
+        gameOver = false;
+        initializeGame();
     }
 
     public void spawnFood() {
@@ -96,6 +108,14 @@ public class SnakeGame extends JPanel implements ActionListener {
         if (newHead.equals(food)) {
             snake.addFirst(newHead);
             spawnFood();
+            score += 10; // Increment score
+            Toolkit.getDefaultToolkit().beep(); // Beep sound effect
+
+            // Speed up the game every 50 points
+            if (score % 50 == 0 && delay > 50) {
+                delay -= 10;
+                timer.setDelay(delay);
+            }
         } else {
             snake.addFirst(newHead);
             snake.removeLast();
@@ -123,8 +143,9 @@ public class SnakeGame extends JPanel implements ActionListener {
         super.paintComponent(g);
 
         if (gameOver) {
-            String message = "Game Over! Press 'R' to restart.";
+            String message = "Game Over! Press Enter to Restart";
             g.setColor(Color.white);
+            g.setFont(new Font("Arial", Font.BOLD, 20));
             g.drawString(message, WIDTH / 2 - g.getFontMetrics().stringWidth(message) / 2, HEIGHT / 2);
             return;
         }
@@ -139,10 +160,16 @@ public class SnakeGame extends JPanel implements ActionListener {
         g.setColor(Color.red);
         g.fillRect(food.x * UNIT_SIZE, food.y * UNIT_SIZE, UNIT_SIZE, UNIT_SIZE);
 
+        // Draw the score
+        g.setColor(Color.white);
+        g.setFont(new Font("Arial", Font.BOLD, 18));
+        g.drawString("Score: " + score, 10, 20);
+
         // Draw pause message
         if (paused) {
-            String message = "Paused! Press 'P' to resume.";
+            String message = "Paused! Press 'P' to Resume";
             g.setColor(Color.white);
+            g.setFont(new Font("Arial", Font.BOLD, 20));
             g.drawString(message, WIDTH / 2 - g.getFontMetrics().stringWidth(message) / 2, HEIGHT / 2);
         }
     }
@@ -155,15 +182,5 @@ public class SnakeGame extends JPanel implements ActionListener {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-
-        gamePanel.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_R && gamePanel.gameOver) {
-                    gamePanel.gameOver = false;
-                    gamePanel.initializeGame();
-                }
-            }
-        });
     }
 }
